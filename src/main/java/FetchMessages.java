@@ -19,7 +19,7 @@ import java.util.Properties;
 import org.json.JSONObject;
 
 
-public class Fetch_Messages implements RequestHandler<Object, Object> {
+public class FetchMessages implements RequestHandler<Object, Object> {
     // private BasicAWSCredentials credentials;
     private static final String simpleQueue = "dead-letter_queue.fifo";
     final AmazonSQS sqs = AmazonSQSClientBuilder.standard().build();
