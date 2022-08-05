@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="[Remote] welcomeFunction" type="aws.lambda" factoryName="Remote" editBeforeRun="true" nameIsGenerated="true">
+    <option name="credentialProviderId" value="profile:default" />
+    <option name="regionId" value="us-east-1" />
+    <option name="functionName" value="welcomeFunction" />
+    <option name="input" value="" />
+    <option name="inputIsFile" value="true" />
+    <method v="2" />
+  </configuration>
+</component>
