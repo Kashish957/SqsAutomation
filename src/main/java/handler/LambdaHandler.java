@@ -14,6 +14,7 @@ import com.amazonaws.services.sqs.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.json.JSONObject;
 
 public class LambdaHandler implements RequestHandler<Object, Object> {
@@ -30,8 +31,7 @@ public class LambdaHandler implements RequestHandler<Object, Object> {
         System.out.println("Below are the Messages present in DLQ:---");
         for (Message msg : messages) {
             try {
-                System.out.println(msg.getBody());
-                JSONObject msgBody = new JSONObject(msg.getBody().replaceAll(" ",""));
+                JSONObject msgBody = new JSONObject(msg.getBody().replaceAll(".", ""));
                 JSONObject msgAttr = new JSONObject(msgBody.get("MessageAttributes"));
                 Object timestamp = msgBody.get("Timestamp");
                 String email = (new JSONObject(msgAttr.get("email").toString())).get("Value").toString();
