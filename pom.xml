@@ -18,7 +18,7 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-cognitoidp</artifactId>
-            <version>1.11.587</version>
+            <version>1.12.272</version>
         </dependency>
         <!-- Thanks for using https://jar-download.com -->
 
@@ -39,7 +39,7 @@
     <dependency>
         <groupId>com.amazonaws</groupId>
         <artifactId>aws-java-sdk-sqs</artifactId>
-        <version>1.12.239</version>
+        <version>1.12.272</version>
     </dependency>
 
     <dependency>

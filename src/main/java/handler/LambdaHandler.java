@@ -20,18 +20,18 @@ public class LambdaHandler implements RequestHandler<Object, Object> {
     private static final String simpleQueue = "dead-letter_queue.fifo";
     private AWSCognitoIdentityProvider client;
 
-    final AmazonSQS sqs = AmazonSQSClientBuilder.standard().build();
+    final AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
 
     public Object handleRequest(Object i, Context o) {
         client = createCognitoClient();
-        String queueUrl = getQueueUrl(simpleQueue);
+        String queueUrl = sqs.getQueueUrl(simpleQueue).getQueueUrl();
         System.out.println(queueUrl);
         List<Message> messages = getMessagesFromQueue(queueUrl);
         System.out.println("Below are the Messages present in DLQ:---");
         for (Message msg : messages) {
             try {
                 System.out.println(msg.getBody());
-                JSONObject msgBody = new JSONObject(msg.getBody());
+                JSONObject msgBody = new JSONObject(msg.getBody().replaceAll(" ",""));
                 JSONObject msgAttr = new JSONObject(msgBody.get("MessageAttributes"));
                 Object timestamp = msgBody.get("Timestamp");
                 String email = (new JSONObject(msgAttr.get("email").toString())).get("Value").toString();
@@ -44,11 +44,6 @@ public class LambdaHandler implements RequestHandler<Object, Object> {
             }
         }
         return null;
-    }
-
-    public String getQueueUrl(String queueName) {
-        GetQueueUrlRequest getQueueUrlRequest = new GetQueueUrlRequest(queueName);
-        return sqs.getQueueUrl(getQueueUrlRequest).getQueueUrl();
     }
 
     public List<Message> getMessagesFromQueue(String queueUrl) {
