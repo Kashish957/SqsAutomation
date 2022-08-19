@@ -15,7 +15,14 @@
     </properties>
 
     <dependencies>
-    <dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-cognitoidp</artifactId>
+            <version>1.11.587</version>
+        </dependency>
+        <!-- Thanks for using https://jar-download.com -->
+
+        <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-params</artifactId>
         <version>5.9.0</version>
