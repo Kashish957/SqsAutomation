@@ -23,7 +23,7 @@ public class LambdaHandler implements RequestHandler<Object, Object> {
 
     final AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
 
-    public Object handleRequest(Object i, Context o) {
+    public Object handleRequest(Object o, Context c) {
         client = createCognitoClient();
         String queueUrl = sqs.getQueueUrl(simpleQueue).getQueueUrl();
         System.out.println(queueUrl);
@@ -31,12 +31,40 @@ public class LambdaHandler implements RequestHandler<Object, Object> {
         System.out.println("Below are the Messages present in DLQ:---");
         for (Message msg : messages) {
             try {
-                JSONObject msgBody = new JSONObject(msg.getBody().replaceAll(".", ""));
+                //System.out.println(msg.getBody().replaceAll("&nbsp;", ""));
+                //msg.getBody().strip()
+                String[] l=msg.getBody().split(":");
+                String email="";
+                String sub="";
+                String Timestamp="";
+                for(int i=0;i<l.length;i++)
+                {
+                    if(l[i].contains("\"Timestamp\"")){
+                        System.out.println("Timestamp is "+l[i+1]);
+                    }
+                    if(l[i].contains("\"sub\""))
+                    {
+                        //sub=l[i+3].substring(1,l[i+3].length()-8);
+                        System.out.println("sub is "+l[i+3]);
+
+                    }
+                    if(l[i].contains("\"email\""))
+                    {
+                        email=l[i+3].substring(1,l[i+3].length()-8);
+                        System.out.println("email is "+email);
+
+
+                    }
+
+
+                }
+
+               /* JSONObject msgBody = new JSONObject(msg.getBody().replaceAll(" ", ""));
                 JSONObject msgAttr = new JSONObject(msgBody.get("MessageAttributes"));
                 Object timestamp = msgBody.get("Timestamp");
                 String email = (new JSONObject(msgAttr.get("email").toString())).get("Value").toString();
                 String subId = (new JSONObject(msgAttr.get("sub").toString())).get("Value").toString();
-                System.out.println(subId + "\n" + email + "\n" + timestamp);
+                System.out.println(subId + "\n" + email + "\n" + timestamp);*/
                 checkEmailInCognito(email);
             } catch (Exception e) {
                 // TODO Auto-generated catch block
@@ -62,7 +90,7 @@ public class LambdaHandler implements RequestHandler<Object, Object> {
         ListUsersRequest l = new ListUsersRequest();
         l.setAttributesToGet(new ArrayList<>());
         l.setFilter(filter);
-        l.setUserPoolId(" us-east-1_DJpISoGFK");
+        l.setUserPoolId("us-east-1_DJpISoGFK");
         ListUsersResult result = client.listUsers(l);
         result.getUsers().forEach(user -> System.out.println("User with filter applied " + user.getUsername() + " Status " + user.getUserStatus()
                 + " Created " + user.getUserCreateDate()));
