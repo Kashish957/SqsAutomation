@@ -29,62 +29,32 @@ public class LambdaHandler implements RequestHandler<Object, Object> {
         System.out.println(queueUrl);
         List<Message> messages = getMessagesFromQueue(queueUrl);
         System.out.println("Below are the Messages present in DLQ:---");
-        for (Message msg : messages) {
-            try {
-                //System.out.println(msg.getBody().replaceAll("&nbsp;", ""));
-                //msg.getBody().strip()
-                String[] l=msg.getBody().split(":");
-                String email="";
-                String sub="";
-                String Timestamp="";
-                for(int i=0;i<l.length;i++)
-                {
-                    if(l[i].contains("\"Timestamp\"")){
-                        System.out.println("Timestamp is "+l[i+1]);
+       // while(messages.size()>0) {
+            for (Message msg : messages) {
+                try {
+                    String[] l = msg.getBody().split("\"");
+                    String email="";
+                    String sub="";
+                    String Timestamp="";
+                    for (int i = 0; i < l.length; i++) {
+                        Timestamp = (l[i].contains("Timestamp"))?l[i + 2]:Timestamp;
+                        sub = (l[i].contains("sub"))?l[i + 8]:sub;
+                        email=(l[i].contains("email"))?l[i + 8]:email;
                     }
-                    if(l[i].contains("\"sub\""))
-                    {
-                        //sub=l[i+3].substring(1,l[i+3].length()-8);
-                        System.out.println("sub is "+l[i+3]);
+                    System.out.println("Timestamp is " + Timestamp);
+                    System.out.println("sub is " + sub);
+                    System.out.println("email is " + email);
 
-                    }
-                    if(l[i].contains("\"email\""))
-                    {
-                        email=l[i+3].substring(1,l[i+3].length()-8);
-                        System.out.println("email is "+email);
+                    checkEmailInCognito(email);
+                    //if email exist and user is not primary replace subid with primary users subid
 
-
-                    }
-
-
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-
-               /* JSONObject msgBody = new JSONObject(msg.getBody().replaceAll(" ", ""));
-                JSONObject msgAttr = new JSONObject(msgBody.get("MessageAttributes"));
-                Object timestamp = msgBody.get("Timestamp");
-                String email = (new JSONObject(msgAttr.get("email").toString())).get("Value").toString();
-                String subId = (new JSONObject(msgAttr.get("sub").toString())).get("Value").toString();
-                System.out.println(subId + "\n" + email + "\n" + timestamp);*/
-                checkEmailInCognito(email);
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
             }
-        }
+       // }
         return null;
     }
-
-    public List<Message> getMessagesFromQueue(String queueUrl) {
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueUrl);
-        return sqs.receiveMessage(receiveMessageRequest).getMessages();
-    }
-
-    private AWSCognitoIdentityProvider createCognitoClient() {
-        AWSCredentials cred = new BasicAWSCredentials("AKIAXJ752B2RV23BZUHH", "9iFkz5jjTq90CaIW/eSZ9B4gW6G5Zj6eDXpUe+sv");
-        AWSCredentialsProvider credProvider = new AWSStaticCredentialsProvider(cred);
-        return AWSCognitoIdentityProviderClientBuilder.standard().withCredentials(credProvider).withRegion(Regions.US_EAST_1).build();
-    }
-
     public void checkEmailInCognito(String email) {
         String filter = "email = \"" + email + "\"";
         ListUsersRequest l = new ListUsersRequest();
@@ -92,7 +62,27 @@ public class LambdaHandler implements RequestHandler<Object, Object> {
         l.setFilter(filter);
         l.setUserPoolId("us-east-1_DJpISoGFK");
         ListUsersResult result = client.listUsers(l);
-        result.getUsers().forEach(user -> System.out.println("User with filter applied " + user.getUsername() + " Status " + user.getUserStatus()
-                + " Created " + user.getUserCreateDate()));
+        result.getUsers().forEach(user ->
+        {
+            System.out.println("User with filter applied " + user.getUsername() + " Status " + user.getUserStatus()
+                    + " Created " + user.getUserCreateDate());
+
+
+        });
+    }
+
+    public List<Message> getMessagesFromQueue(String queueUrl) {
+        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueUrl);
+        return sqs.receiveMessage(receiveMessageRequest).getMessages();
+        //return sqs.receiveMessage(queueUrl)
+    }
+
+    public void saveMessagesBackup()
+    {}
+
+    private AWSCognitoIdentityProvider createCognitoClient() {
+        AWSCredentials cred = new BasicAWSCredentials("AKIAXJ752B2RV23BZUHH", "9iFkz5jjTq90CaIW/eSZ9B4gW6G5Zj6eDXpUe+sv");
+        AWSCredentialsProvider credProvider = new AWSStaticCredentialsProvider(cred);
+        return AWSCognitoIdentityProviderClientBuilder.standard().withCredentials(credProvider).withRegion(Regions.US_EAST_1).build();
     }
 }
