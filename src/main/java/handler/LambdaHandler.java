@@ -42,13 +42,13 @@ public class LambdaHandler implements RequestHandler<Object, Object> {
                     System.out.println("sub is " + subId);
                     System.out.println("email is " + email);
                     String primaryUserSubId=getPrimaryUserSubId(email);
+
                     if(subId!=primaryUserSubId)
                     {
                         String msgBody = msg.getBody();
-
-                        //"sub"(.)*} -> "sub":type.....
-                        msgBody.replace("\\^sub.*}",primaryUserSubId);
-                    }// how to find index of } after "sub" ..
+                        String msgb= msgBody.replace(subId,primaryUserSubId);
+                        System.out.println(msgb);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -70,16 +70,14 @@ public class LambdaHandler implements RequestHandler<Object, Object> {
             System.out.println("User with filter applied " + user.getUsername() + " Status " + user.getUserStatus()
                     + " Created " + user.getUserCreateDate());
             Date createdDate = user.getUserCreateDate();
-            if(oldestDate.get().compareTo(createdDate)<0)
+            if(oldestDate.get().compareTo(createdDate)>0)
             {
                 oldestDate.set(createdDate);
                 oldestUserSubId.set(user.getUsername());
             }
         });
         return oldestUserSubId.toString();
-
     }
-
     public List<Message> getMessagesFromQueue(String queueUrl) {
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueUrl);
         return sqs.receiveMessage(receiveMessageRequest).getMessages();
