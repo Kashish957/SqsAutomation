@@ -12,6 +12,8 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.*;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -23,8 +25,9 @@ public class LambdaHandler implements RequestHandler<Object, Object> {
 
     public Object handleRequest(Object o, Context c) {
         client = createCognitoClient();
-        String queueUrl = sqs.getQueueUrl(simpleQueue).getQueueUrl();
-        List<Message> messages = getMessagesFromQueue(queueUrl);
+        String dlqQueueUrl = sqs.getQueueUrl(simpleQueue).getQueueUrl();
+        List<Message> messages = getMessagesFromQueue(dlqQueueUrl);
+        //String mainQueueUrl = sqs.getQueueUrl("main_queue.fifo").getQueueUrl();
         System.out.println("Below are the Messages present in DLQ:---");
        // while(messages.size()>0) {
             for (Message msg : messages) {
@@ -41,14 +44,22 @@ public class LambdaHandler implements RequestHandler<Object, Object> {
                     System.out.println("Timestamp is " + Timestamp);
                     System.out.println("sub is " + subId);
                     System.out.println("email is " + email);
-                    String primaryUserSubId=getPrimaryUserSubId(email);
-
+                    String primaryUserSubId=getPrimaryUserSubIdbyCmd(email);
                     if(subId!=primaryUserSubId)
                     {
                         String msgBody = msg.getBody();
                         String msgb= msgBody.replace(subId,primaryUserSubId);
-                        System.out.println(msgb);
+                       msg.setBody(msgb);
+                       System.out.println(msgb);
                     }
+
+                    /*SendMessageRequest send_msg_request = new SendMessageRequest()
+                            .withQueueUrl(mainQueueUrl)
+                            .withMessageBody(msg.getBody())
+                            .withDelaySeconds(5);
+                    sqs.deleteMessage(dlqQueueUrl,msg.getReceiptHandle());
+                    sqs.sendMessage(send_msg_request);*/
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -56,34 +67,32 @@ public class LambdaHandler implements RequestHandler<Object, Object> {
        // }
         return null;
     }
-    public String getPrimaryUserSubId(String email) {
-        String filter = "email = \"" + email + "\"";
-        ListUsersRequest l = new ListUsersRequest();
-        l.setAttributesToGet(new ArrayList<>());
-        l.setFilter(filter);
-        l.setUserPoolId("us-east-1_DJpISoGFK");
-       List<UserType> result = client.listUsers(l).getUsers();
-        AtomicReference<Date> oldestDate= new AtomicReference<>(new Date());
-        AtomicReference<String> oldestUserSubId= new AtomicReference<>("");
-        result.forEach(user ->
+
+    public String getPrimaryUserSubIdbyCmd(String email)
+    {
+        try
         {
-            System.out.println("User with filter applied " + user.getUsername() + " Status " + user.getUserStatus()
-                    + " Created " + user.getUserCreateDate());
-            Date createdDate = user.getUserCreateDate();
-            if(oldestDate.get().compareTo(createdDate)>0)
-            {
-                oldestDate.set(createdDate);
-                oldestUserSubId.set(user.getUsername());
-            }
-        });
-        return oldestUserSubId.toString();
+            String[] commands = {"cmd",  "/K", "aws cognito-idp admin-get-user --user-pool-id us-east-1_76MUNFQpM --username "+email+" --profile ecim-read --region us-east-1"};
+
+            BufferedReader stdInput = new BufferedReader(new
+                    InputStreamReader(Runtime.getRuntime().exec(commands).getInputStream()));
+
+            while (!(stdInput.readLine().trim().equals("\"Name\": \"sub\","))) {}
+            String s= stdInput.readLine().trim();
+            return s.substring(10,s.length()-1);
+        }
+        catch (Exception e)
+        {
+            System.out.println("HEY Buddy ! U r Doing Something Wrong ");
+            e.printStackTrace();
+        }
+        return "";
     }
     public List<Message> getMessagesFromQueue(String queueUrl) {
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueUrl);
         return sqs.receiveMessage(receiveMessageRequest).getMessages();
         //return sqs.receiveMessage(queueUrl)
     }
-
     public void saveMessagesBackup()
     {}
 
