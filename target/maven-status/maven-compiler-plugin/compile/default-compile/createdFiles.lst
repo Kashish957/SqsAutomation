@@ -1,2 +1,3 @@
+handler\Cmd.class
 handler\LambdaHandler.class
 handler\MsgBody.class
